@@ -50,10 +50,6 @@ uint8_t hdopGps;
 
 void build_packet()
 {
-  while (GPSSerial.available())
-  {
-    gps.encode(GPSSerial.read());
-  }
   LatitudeBinary = ((gps.location.lat() + 90) / 180.0) * 16777215;
   LongitudeBinary = ((gps.location.lng() + 180) / 360.0) * 16777215;
   
@@ -157,11 +153,14 @@ void onEvent (ev_t ev) {
   }
 }
 
-void do_send(osjob_t* j) {
+void do_send(osjob_t* j) {  
   // Check if there is not a current TX/RX job running
-  if (LMIC.opmode & OP_TXRXPEND) {
+  if (LMIC.opmode & OP_TXRXPEND)
+  {
     Serial.println(F("OP_TXRXPEND, not sending"));
-  } else {
+  }
+  else
+  {
     // Prepare upstream data transmission at the next possible time.
     build_packet();
     LMIC_setTxData2(1, txBuffer, sizeof(txBuffer), 0);
@@ -211,12 +210,29 @@ void setup() {
   // Set data rate and transmit power for uplink (note: txpow seems to be ignored by the library)
   LMIC_setDrTxpow(DR_SF7,14); 
   
-  // Start job 
-  do_send(&sendjob);
   pinMode(BUILTIN_LED, OUTPUT);
   digitalWrite(BUILTIN_LED, LOW);
+  
 }
 
 void loop() {
-  os_runloop_once();
+  
+  // Update GPS
+  while (GPSSerial.available())
+  {
+    gps.encode(GPSSerial.read());
+  }
+  
+  delay(1000);
+  
+  if (gps.location.isValid())
+  {
+    Serial.println("GPS has fixed.");
+    do_send(&sendjob);
+    os_runloop_once();
+  }
+  else
+  {
+    Serial.println("No fix yet...");
+  }
 }
