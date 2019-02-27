@@ -2,6 +2,9 @@
 #include <hal/hal.h>
 #include <WiFi.h>
 
+// Comment the next line to use ABP authentication on TTN. Leave it as it is to use recommended OTAA
+#define OTAA
+
 // UPDATE the config.h file in the same folder WITH YOUR TTN KEYS AND ADDR.
 #include "config.h"
 #include "gps.h"
@@ -13,12 +16,14 @@ char s[32]; // used to sprintf for Serial output
 uint8_t txBuffer[9];
 gps gps;
 
+#ifndef OTAA
 // These callbacks are only used in over-the-air activation, so they are
 // left empty here (we cannot leave them out completely unless
 // DISABLE_JOIN is set in config.h, otherwise the linker will complain).
 void os_getArtEui (u1_t* buf) { }
 void os_getDevEui (u1_t* buf) { }
 void os_getDevKey (u1_t* buf) { }
+#endif
 
 static osjob_t sendjob;
 // Schedule TX every this many seconds (might become longer due to duty cycle limitations).
@@ -140,9 +145,12 @@ void setup() {
   os_init();
   // Reset the MAC state. Session and pending data transfers will be discarded.
   LMIC_reset();
-  
+
+#ifndef OTAA  
   LMIC_setSession (0x1, DEVADDR, NWKSKEY, APPSKEY);
-  
+#endif
+
+#ifdef CFG_eu868
   LMIC_setupChannel(0, 868100000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
   LMIC_setupChannel(1, 868300000, DR_RANGE_MAP(DR_SF12, DR_SF7B), BAND_CENTI);      // g-band
   LMIC_setupChannel(2, 868500000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
@@ -152,6 +160,17 @@ void setup() {
   LMIC_setupChannel(6, 867700000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
   LMIC_setupChannel(7, 867900000, DR_RANGE_MAP(DR_SF12, DR_SF7),  BAND_CENTI);      // g-band
   LMIC_setupChannel(8, 868800000, DR_RANGE_MAP(DR_FSK,  DR_FSK),  BAND_MILLI);      // g2-band
+#endif
+
+#ifdef CFG_us915
+  LMIC_selectSubBand(1);
+
+  //Disable FSB2-8, channels 16-72
+  for (int i = 16; i < 73; i++) {
+    if (i != 10)
+      LMIC_disableChannel(i);
+  }
+#endif
 
   // Disable link check validation
   LMIC_setLinkCheckMode(0);
