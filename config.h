@@ -1,3 +1,6 @@
+// Comment the next line to use ABP authentication on TTN. Leave it as it is to use recommended OTAA
+#define OTAA
+
 #ifndef LORA_TTNMAPPER_TBEAM_CONFIG_INCLUDED
 #define LORA_TTNMAPPER_TBEAM_CONFIG_INCLUDED
 

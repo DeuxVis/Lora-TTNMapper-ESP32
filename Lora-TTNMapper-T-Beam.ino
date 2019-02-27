@@ -2,9 +2,6 @@
 #include <hal/hal.h>
 #include <WiFi.h>
 
-// Comment the next line to use ABP authentication on TTN. Leave it as it is to use recommended OTAA
-#define OTAA
-
 // UPDATE the config.h file in the same folder WITH YOUR TTN KEYS AND ADDR.
 #include "config.h"
 #include "gps.h"
