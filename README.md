@@ -22,7 +22,7 @@ You can program the T-Beam using the [Arduino ESP32](https://github.com/espressi
 
 On The Things Network side, the settings needed are available [here](https://www.thethingsnetwork.org/docs/applications/ttnmapper/).
 
-Configure the Payload decoder with:
+Configure the Payload decoder for TTNv2 with:
 ```javascript
 function Decoder(bytes, port) {
     var decoded = {};
@@ -49,6 +49,36 @@ function Decoder(bytes, port) {
     return decoded;
 }
 ```
+
+For TTNv3 you can use the following function:
+```javascript
+function decodeUplink(input) {
+    var decoded = {};
+
+    decoded.latitude = ((input.bytes[0]<<16)>>>0) + ((input.bytes[1]<<8)>>>0) + input.bytes[2];
+    decoded.latitude = (decoded.latitude / 16777215.0 * 180) - 90;
+  
+    decoded.longitude = ((input.bytes[3]<<16)>>>0) + ((input.bytes[4]<<8)>>>0) + input.bytes[5];
+    decoded.longitude = (decoded.longitude / 16777215.0 * 360) - 180;
+  
+    var altValue = ((input.bytes[6]<<8)>>>0) + input.bytes[7];
+    var sign = input.bytes[6] & (1 << 7);
+    if(sign)
+    {
+        decoded.altitude = 0xFFFF0000 | altValue;
+    }
+    else
+    {
+        decoded.altitude = altValue;
+    }
+  
+    decoded.hdop = input.bytes[8] / 10.0;
+
+    return { 
+      data: decoded
+    }
+}
+
 
 Let me know if more detailed instructions are needed.
 
